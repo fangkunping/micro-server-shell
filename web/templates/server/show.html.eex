@@ -1,0 +1,24 @@
+<!-- Breadcrumbs-->
+<ol class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="#">Servers</a>
+    </li>
+    <li class="breadcrumb-item active"><%= @server.name %></li>
+</ol>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Id</h5>
+    <p class="card-text"><%= gen_server_token(@app_id, @server.id) %></p>
+    <h5 class="card-title">Name</h5>
+    <p class="card-text"><%= @server.name %></p>
+    <h5 class="card-title">Note</h5>
+    <p class="card-text"><%= @server.note %></p>
+    <h5 class="card-title">Scripts</h5>
+    <blockquote class="blockquote">
+    <%= for script <- @server.script_sequence do %>
+      <p class="mb-0"><%= script.name %>: <%= script.note %></p>
+    <% end %>
+    </blockquote>
+  </div>
+</div>

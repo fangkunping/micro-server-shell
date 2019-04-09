@@ -1,0 +1,494 @@
+
+<!-- Breadcrumbs-->
+<ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="#">Dashboard</a>
+  </li>
+  <li class="breadcrumb-item active">Documents</li>
+</ol>
+
+<a href="https://www.lua.org/manual/5.2/">lua 5.2 document</a>
+
+<div class="card mb-3">
+<div class="card-header">default</div>
+<div class="card-body">
+<pre>
+通用回调函数
+-- on server start 
+function on_init()
+end
+
+-- on every 200ms 
+function on_tick()
+end
+
+-- on hot update finish
+function on_hot_update()
+end
+
+-- on pipe cast
+function on_pipe_cast(ticket, from_server_id, args...)
+end
+
+-- on pipe call
+-- 当 ticket == -1 表示 自己发送给自己
+function on_pipe_call(ticket, from_server_id, args...) -> any
+end
+
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">内部变量</div>
+<div class="card-body">
+<pre>
+UPTIME 从"微服务器"启动到现在经过的时间(毫秒)
+DELTA_TIME 上次tick与当前tick的时间差(毫秒)
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">基础函数</div>
+<div class="card-body">
+<pre>
+apply(fun[, args...]) -> any
+pcall(fun[, args...]) -> true, result | false
+print(any, ...)
+pipe_cast(to_server_id, args...) 
+pipe_call(to_server_id, args...) -> any
+start_tick() -- 启动tick
+stop_tick() -- 停止tick
+server_info() -> ... -- 返回当前服务器的信息, 包括 server_id, app_id
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">模块使用</div>
+<div class="card-body">
+<pre>
+所有的模块在使用前必须使用require函数导入, 例如
+require(websocket)
+
+可以一次性导入多个模块, 例如
+require(crypto, websocket, string_tools, web, mysql, cache2, cache1)
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">table</div>
+<div class="card-body">
+<pre>
+table.is_in(k, v, table) -> true | false
+table.is_in(v, list) -> true | false
+table.clone(list | table) -> list | table
+
+-- true
+table.is_in(3, {2,4,6,3})
+-- true
+table.is_in("name", "Max", {name="Max"})
+
+local new_t = table.clone({2,4,6,3})
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">cache1</div>
+<div class="card-body">
+<pre>
+cache1.write(key : any, value : any) -> true | false
+cache1.read(key : any) -> any | nil
+cache1.delete()
+cache1.delete(key : any)
+cache1.size() -> number
+
+cache1.map(f : function) -> list
+f => function(key : any, value : any) -> true | true, result : any | false, result : any
+函数f返回
+•true 继续遍历
+•false 终止遍历
+•true, result 继续遍历, 并将result加入返回列表
+•false, result 终止遍历, 并将result加入返回列表
+
+例子:
+function on_http(tick, ...)
+  cache1.write("a", 10.12)
+  cache1.write("b", 10)
+  cache1.write("c", {1,2,3,4})
+  -- 结果是 10.12
+  print(cache1.map(
+    function(key, value)
+      trace(key, value)
+      if (key == "a") then
+        return false, value
+      else
+        return true
+      end
+    end
+  )[1])
+  return
+end
+
+================================================
+快速增删改查模式
+1. require(cache1)
+
+2. 定义表及字段, 会被预编译, 一般写在开头
+  cache1_table(table_name : string, rows : atom ... )
+  第一个字段为唯一值, 由用户自己维护
+  例如:
+  cache1_table("animal", id, name, type, age)
+
+3. 定义查询语句, 会被预编译, 一般写在开头
+  cache1_def_query(table_name : string, query_id : string, querys : string  )
+  例如:
+  cache1_def_query("animal", "q_animal_1", [[name ~= "1" and age > "2"]] )
+
+    查询语句中 querys的定义
+      a) 使用 "," 分隔 每个条件
+      b) 每个条件将获得一个结果集
+      c) 条件内使用 布尔表达式进行 判断 格式为:
+        row_name:atom op params:string
+        row_name: 字段名称
+        op: >, >=, ==, <, <=, ~=
+        params: 字符串形式的数字, 代表将要输入的参数, 从 1 开始
+      d) 条件内的布尔表达式可以使用 "and" 进行 连接
+      e) 最终结果集会被合并输出
+  
+    例如:
+      [[name ~= '1' and age > '2']]
+      [[name ~= '1' and age > '2', name == '3']]
+
+4. 写入
+  cache1.q_write(table_name:string, data:table)
+  例如:
+  cache1.q_write("animal", {id=10, name="tiger", age=3})
+
+5. 读取
+  trace(cache1.q_read(table_name:string, 第一个字段))
+  例如:
+  trace(cache1.q_read("animal", 10))
+
+6. 删除
+  cache1.q_delete(query_id : string, params : any ...)
+  例如:
+  cache1.q_delete("q_animal_2", "dog", 4, "cat")
+
+7. 选择
+  cache1.q_select(query_id : string, params : any ...)
+  例如:
+  cache1.q_select("q_animal_2", "dog", 4, "cat")
+
+8. 选择并更新
+  cache1.q_select_and_update(query_id : string, update_obj : table, params : any ...)
+  例如:
+  cache1.q_select_and_update("test_q1", { b = 30 }, 10)
+
+9. 总例子:
+    require(cache1, web)
+    cache1_table("animal", id, name, type, age)
+    cache1_def_query("animal", "q_animal_1", [[name ~= "1" and age > "2"]] )
+    cache1_def_query("animal", "q_animal_2", [[name ~= "1" and age > "2", name == "3"]] )
+
+    function on_http(ticket, message)
+      -- 写入
+      print(cache1.q_write("animal", {id=10, name="tiger", age=3}))
+      print(cache1.q_write("animal", {id=11, name="cat", age=2}))
+      -- 读取
+      print(cache1.q_read("animal", 10))
+      -- 选择
+      print(cache1.q_select("q_animal_1", "dog", 1))
+      local rs = cache1.q_select("q_animal_2", "dog", 4, "cat")
+      for _,v in pairs(rs) do
+        "result is: " .. v.name
+      end
+      -- 选择并更新
+      cache1.q_select_and_update("q_animal_1", { age = 30 }, "dog", 1)
+      -- 删除
+      print(cache1.q_delete("q_animal_2", "dog", 4, "cat"))
+      -- 选择
+      print(cache1.q_select("q_animal_1", "dog", 1))
+    end
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">cache2</div>
+<div class="card-body">
+<pre>
+cache2.write(key : any, value : any) -> true | false
+cache2.read(key : any) -> any | nil
+cache2.delete()
+cache2.delete(key : any)
+cache2.size() -> number
+
+cache2.map(f : function) -> list
+f => function(key : any, value : any) -> true | true, result : any | false, result : any
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">crypto</div>
+<div class="card-body">
+<pre>
+-- 0cf1c7a95fd3ccd627ad57c33b0f6fcd:1838
+crypto.password_hash("12345")
+crypto.password_hash("12345", "speckey")
+
+-- 827ccb0eea8a706c4c34a16891f84e7b
+crypto.md5("12345")
+
+-- 5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5
+crypto.sha256("12345")
+
+-- true
+crypto.password_validate("12345", crypto.password_hash("12345"))
+crypto.password_validate("12345", crypto.password_hash("12345", "speckey"))
+
+-- false
+crypto.password_validate("12346", crypto.password_hash("12345"))
+crypto.password_validate("12346", crypto.password_hash("12345", "speckey"))
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">mysql</div>
+<div class="card-body">
+<pre>
+-- true
+mysql.connect({username="root", password="maxfkp", database="test",hostname="localhost",port=3306})
+
+--[[
+
+{
+    num_rows = number,
+    last_insert_id = number,
+    row_datas = {
+      {
+        column_name1 = column_value1,
+        column_name2 = column_value2,
+        ...
+      }
+    }
+}
+
+ ]]
+-- nil
+mysql.query("select * from email where id = ? and create_date = ?", 28, 1489392651)
+
+-- rt.row_datas[1]["count(*)"] == 0
+mysql.query("SELECT count(*) FROM a")
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">string_tools</div>
+<div class="card-body">
+<pre>
+-- "1hellotrue{\"1\":1.0,\"2\":\"hello\",\"4\":true,\"name\":\"Max\"}"
+string_tools.join(1,"hello",nil,true,{1,"hello",nil,true,name="Max"})
+
+-- "1hellotrue{\"1\":1.0,\"2\":\"hello\",\"4\":true,\"name\":\"Max\"}"
+string_tools.join({1,"hello",nil,true,{1,"hello",nil,true,name="Max"}})
+
+-- "1 hello  true {\"1\":1.0,\"2\":\"hello\",\"4\":true,\"name\":\"Max\"}"
+string_tools.join_with(" ", 1,"hello",nil,true,{1,"hello",nil,true,name="Max"})
+
+-- "1 hello true {\"1\":1.0,\"2\":\"hello\",\"4\":true,\"name\":\"Max\"}"
+string_tools.join_with(" ", {1,"hello",nil,true,{1,"hello",nil,true,name="Max"}})
+
+-- true
+string_tools.regex_match("honeymax@21cn.com", "(?i-x)\b[\d!#$%&'*+./=?_`a-z{\|}~^-]+@[\d.a-z-]+\.[a-z]{2,6}\b")
+
+--[[
+  {
+    "{\"age\":40,\"name\":\"Max\"}",
+    "\"hello world\"",
+    "true",
+    "false",
+    "\"nil\"",
+    "[\"hello world\",true,false,null,1,1.1]"
+  }
+]]
+-- 字符串 "null" 会被替换成 null
+-- nil 会被替换成 字符串"nil"
+-- {2,3,4} 会成为json数组
+-- 3.0 类型的数值会被替换成整数 3
+string_tools.json_encode({name="Max", age=40}, "hello world", true, false, nil, {"hello world", true, false, "null", 1, 1.1})
+
+-- {{"age", 40.0}, {"name", "Max"}}
+string_tools.json_decode([[{"age":40,"name":"Max"}]])
+
+-- [[
+  {
+    {1, "hello world"},
+    {2, true},
+    {3, false},
+    {4, "null"},
+    {5, 1.0},
+    {6, 1.1}
+  }
+]]
+-- null 会被替换成 字符串 "null"
+-- 整数都会被替换成 小数
+string_tools.json_decode([[["hello world",true,false,null,1,1.1]]])
+
+
+string_tools.split(str, str_sp) -> table
+-- {"1", "2", "3", "4", "5", "", "6", "7", "8", "9", "", "", "10"}
+string_tools.split("1,2,3,4,5,,6,7,8,9,,,10", ",")
+
+-- "1 + 4 = 5"
+string_tools.simple_tpl("{{1}} + {{2}} = {{3}}", {1, 4, 5})
+-- "My name is: Max Fang"
+string_tools.simple_tpl("My name is: {{first name}} {{last name}}", {["first name"]="Max", ["last name"]="Fang"})
+-- "My name is: Max Fang"
+string_tools.simple_tpl("My name is: {{first_name}} {{last_name}}", {first_name="Max", last_name="Fang"})
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">web</div>
+<div class="card-body">
+<pre>
+-- ticket: http 链接到"微服务器"的唯一标识, 不同的socket链接, 表现为不同的ticket, 对于 http 来说, 每个http的链接, 对应一个ticket
+-- message: 从http传来的数据, 已经解码为table格式
+-- on http message in 
+function on_http(ticket, message)
+    return "ok"
+end
+
+
+web.http_get("http://xxx.xxx", {name="Max"})
+web.http_get("https://xxx.xxx", {name="Max"})
+web.http_get("http://xxx.xxx")
+web.http_get("https://xxx.xxx")
+
+- 返回数据
+- "404"
+- nil 访问网站出错
+- "vip limit" vip 使用限制
+
+web.http_post("http://xxx.xxx", {name="Max"})
+web.http_post("https://xxx.xxx", {name="Max"})
+web.http_post("http://xxx.xxx")
+web.http_post("https://xxx.xxx")
+
+web.url_encode(table) -> string
+
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">websocket</div>
+<div class="card-body">
+<pre>
+
+-- ticket: socket链接到"微服务器"的唯一标识, 不同的socket链接, 表现为不同的ticket, 对于 websocket来说, 每个websocket的链接, 对应一个ticket
+-- message: 从socket传来的数据, 如果前端传的是json格式(对javascript来说是object), 会被解码为table格式
+
+-- on socket message in
+function on_websocket(ticket, message)
+end
+
+-- topic_join
+function on_websocket_open(ticket, params)
+    return true
+end
+
+-- topic_leave
+function on_websocket_close(ticket)
+end
+
+-- on socket connect
+function on_websocket_connect(ticket, params)
+    return true
+end
+
+-- on socket disconnect
+function on_websocket_disconnect(ticket)
+end
+
+
+websocket.send(ticks : number | table{numbers}, data : number | string | table)
+
+-- ex
+function on_websocket(ticket, message)
+    websocket.send(ticket, 100)
+    websocket.send(ticket, "hello world from server")
+    websocket.send(ticket, {name="Max"})
+end
+
+-- 客户端接收到的数据 是一个数组 从服务端先发送的消息, 在数组的后面, 后发的信息在数组的头部
+[{"name":"Max"},"hello world from server",100]
+</pre>
+</div>
+</div>
+
+<div class="card mb-3">
+<div class="card-header">pipe 使用示例</div>
+<div class="card-body">
+<pre>
+注意 pipe不是模块, 不用添加入 require
+
+====================== TEST_SERVER_1 ======================
+require(web)
+
+SELF = 4
+TEST_SERVER_2 = 5
+
+function on_http(ticket, message)
+    print(ticket, message)
+    -- 同步
+    print("4 + 6 = ", pipe_call(TEST_SERVER_2, "add", 4, 6))
+    print("4 - 6 = ", pipe_call(TEST_SERVER_2, "sub", 4, 6))
+    -- 自身
+    print("self: 4 * 6 = ", pipe_call(SELF, "mult", 4, 6))
+    -- 异步
+    pipe_cast(TEST_SERVER_2, "add", 4, 6)
+    pipe_cast(TEST_SERVER_2, "sub", 4, 6)
+    return "ok"
+end
+
+
+function on_pipe_call(ticket, from_server_id, c, ...)
+    print(ticket, from_server_id)
+    return pipe_call_action[c](...)
+end
+
+pipe_call_action = {}
+pipe_call_action["mult"] = function(v1, v2) return v1 * v2 end
+
+
+====================== TEST_SERVER_2 ======================
+SELF = 5
+TEST_SERVER_1 = 4
+
+function on_pipe_call(ticket, from_server_id, c, ...)
+    print(ticket, from_server_id)
+    -- 同步需要返回
+    return pipe_call_action[c](...)
+end
+
+function on_pipe_cast(ticket, from_server_id, c, ...)
+    -- 异步不需要返回
+    print(ticket, from_server_id)
+    print(pipe_call_action[c](...))
+end
+
+pipe_call_action = {}
+pipe_call_action["add"] = function(v1, v2) return v1 + v2 end
+pipe_call_action["sub"] = function(v1, v2) return v1 - v2 end
+</pre>
+</div>
+</div>

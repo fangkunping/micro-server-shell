@@ -1,0 +1,18 @@
+<!-- Breadcrumbs-->
+<ol class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="#">Scripts</a>
+    </li>
+    <li class="breadcrumb-item active"><%= @script.name %></li>
+</ol>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Name</h5>
+    <p class="card-text"><%= @script.name %></p>
+    <h5 class="card-title">Note</h5>
+    <p class="card-text"><%= @script.note %></p>
+    <h5 class="card-title">Content</h5>
+    <pre><%= @script.content %></pre>
+  </div>
+</div>

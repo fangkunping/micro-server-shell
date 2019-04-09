@@ -1,0 +1,90 @@
+<!-- Breadcrumbs-->
+<ol class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="#">Servers</a>
+    </li>
+    <li class="breadcrumb-item active">(<%= @server.id %>) <%= @server.name %> | <%= @server.note %></li>
+</ol>
+
+<!-- LOG -->
+<div class="container-fluid">
+    <!-- 服务器及websocket 状态 -->
+    <div class="row">
+    <div class="col-sm">
+        <div class="card">
+            <div class="card-header">
+                Status
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">
+                    Server: <span id="server_status_txt"></span> 
+                    <button type="button" class="btn btn-primary" id="server_status_bt" disabled="true">-</button> 
+                    <button type="button" class="btn btn-primary" id="server_hot_update_bt" disabled="true">hot update</button> 
+                </h5>
+                <hr>
+                <h5 class="card-title">
+                    Websocket: <span id="websocket_status_txt"></span>
+                    <button type="button" class="btn btn-primary" id="websocket_status_bt">-</button> <br>
+                    UUID: <input type="text" id="websocket_uuid" value="1"> <br>
+                    Server Token: <input type="text" id="websocket_server_token" value="<%= gen_server_token(@app_id, @server_id) %>"> 
+                </h5>
+                <h5 class="card-title">
+                    <textarea class="form-control" id="websocket_send_value" rows="1"></textarea>
+                    <button type="button" class="btn btn-primary" id="websocket_send_bt">Send</button> 
+                    <button type="button" class="btn btn-primary" id="websocket_send_json_bt">Send Json</button> 
+                </h5>
+                <hr>
+                <h5 class="card-title">
+                    http params: 
+                    <textarea class="form-control" id="http_send_value" rows="1"></textarea>
+                    <button type="button" class="btn btn-primary" id="http_send_bt">Send</button> 
+                </h5>
+            </div>
+        </div>
+        </div>
+    </div>
+    <p></p>
+    <div class="row">
+        <div class="col-sm">
+            <!-- Local log -->
+            <h5 class="card-title">
+                Local Log 
+                <button type="button" class="btn btn-primary btn-sm" id="clear_local_log_bt">Clear</button>
+            </h5>
+            <textarea class="form-control" id="client_log" rows="6"></textarea>
+            <!-- Local log end -->
+        </div>
+        <div class="col-sm">
+            <!-- Server log -->
+            <h5 class="card-title">
+                Server Log
+                <button type="button" class="btn btn-primary btn-sm" id="refresh_bt">Refresh</button>
+                <button type="button" class="btn btn-primary btn-sm" id="clear_remoting_log_bt">Clear</button>
+            </h5>
+            <textarea class="form-control" id="server_log" rows="6"></textarea>
+            <!-- Server log end -->
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+var CSRF_TOKEN = <%= raw Poison.encode!(Plug.CSRFProtection.get_csrf_token()) %>;
+var is_server_running = false;
+var server_id = <%= @server_id %>;
+var refresh_url = "<%= server_path(@conn, :api_test) %>";
+var server_stop_url = "<%= server_path(@conn, :api_stop) %>";
+var server_start_url = "<%= server_path(@conn, :api_start) %>";
+var server_hot_update_url = "<%= server_path(@conn, :api_hot_update) %>";
+var websocket_url = "<%= @websocket_url %>";
+var http_url = "<%= @http_url %>/<%= gen_server_token(@app_id, @server_id) %>?";
+var ws = null;
+var socket = null;
+var channel = null;
+var remoting_current_show_date = 0;
+var remoting_last_show_date = 0;
+</script>
+
+<script src="<%= cdn_url(@conn, "/js/phoenix_websocket.js") %>"></script>
+<script src="<%= cdn_url(@conn, "/js/server_test2.js") %>"></script>

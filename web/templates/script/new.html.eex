@@ -1,0 +1,11 @@
+<!-- Breadcrumbs-->
+<ol class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="#">Scripts</a>
+    </li>
+    <li class="breadcrumb-item active">New Script</li>
+</ol>
+
+<%= render "form.html", script: @script,
+                        token: @token,
+                        action: script_path(@conn, :create) %>

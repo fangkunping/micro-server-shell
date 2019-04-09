@@ -1,0 +1,59 @@
+<!-- Breadcrumbs-->
+<ol class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="#">Scripts</a>
+    </li>
+    <li class="breadcrumb-item active"><%= @script.note %>[<%= @script.name %>]</li>
+</ol>
+
+<form accept-charset="UTF-8" action="<%= script_path(@conn, :update) %>" method="post" id="script_form">
+    <input type="hidden" value="<%= @token %>" name="_csrf_token" />
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label text-right">Script</label>
+        <div class="col-sm-10">
+            <select name="id" class="form-control" id="id">
+                <%= for script <- @scripts do %>
+	              <option value="<%= script.id %>" <%= if @script.id == script.id do %>selected="selected"<% end %>  ><%= script.name %>[<%= script.note %>]</option>
+                <% end %>
+            </select>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label text-right">Name</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control" id="name" name="name" value="<%= @script.name %>">
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label text-right">Note</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control" id="note" name="note" value="<%= @script.note %>">
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label text-right">Content</label>
+        <div class="col-sm-10">
+            Current editor is "simple", change to 
+            <button type="button" class="btn btn-primary mb-2 btn-sm" onclick="change_editor('basic')">basic editor</button>
+            <button type="button" class="btn btn-primary mb-2 btn-sm" onclick="change_editor('advance')">advance editor</button>
+            <textarea class="form-control" id="content" name="content" rows="10"><%= @script.content %></textarea>
+        </div>
+    </div>
+    <input name="samepage" type="hidden" id="samepage" value="1">
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label"> </label>
+        <div class="col-sm-10">
+            <button type="submit" class="btn btn-primary mb-2">Submit</button>
+        </div>
+    </div>
+</form>
+<script>
+    function change_editor(editor){
+        location.href = "<%= script_path(@conn, :edit) %>?id="+$('#id').val()+"&editor="+editor;
+    }
+    function delay_run(){
+        $('#id').change(function(){
+            location.href = "<%= script_path(@conn, :edit) %>?id="+$('#id').val();
+        });       
+    }
+</script>

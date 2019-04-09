@@ -1,0 +1,11 @@
+<!-- Breadcrumbs-->
+<ol class="breadcrumb">
+    <li class="breadcrumb-item">
+        <a href="#">Servers</a>
+    </li>
+    <li class="breadcrumb-item active"><%= @server.name %></li>
+</ol>
+
+<%= render "form.html", server: @server,
+                        token: @token,
+                        action: server_path(@conn, :update) %>

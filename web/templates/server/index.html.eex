@@ -1,0 +1,82 @@
+
+<!-- Breadcrumbs-->
+<ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="#">Dashboard</a>
+  </li>
+  <li class="breadcrumb-item active">Tables</li>
+</ol>
+
+<!-- DataTables Example -->
+<div class="card mb-3">
+  <div class="card-header"><em class="fas fa-table"></em> Data Table Example</div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Id</th>
+            <th>Token</th>
+            <th>Name</th>
+            <th>Note</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tfoot>
+          <tr>
+            <th>Id</th>
+            <th>Token</th>
+            <th>Name</th>
+            <th>Note</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </tfoot>
+        <tbody>
+          <%= for server <- @servers do %>
+            <tr>
+              <td><%= server.id %></td>
+              <td><%= gen_server_token(@app_id, server.id) %></td>
+              <td><%= server.name %></td>
+              <td><%= server.note %></td>
+              <td class="text-right">
+                <%= server.is_runing? %>
+                <%= if server.is_runing? do %>
+                    <a class="btn btn-danger" href="<%= server_path(@conn, :stop) %>?id=<%= server.id %>">Stop</a>
+                <% else %>
+                    <a class="btn btn-success" href="<%= server_path(@conn, :start) %>?id=<%= server.id %>">Start</a>
+                <% end %>
+              </td>
+              <td class="text-right">
+                <a class="btn btn-primary" href="<%= server_path(@conn, :show) %>?id=<%= server.id %>">Show</a>
+                <a class="btn btn-primary" href="<%= server_path(@conn, :edit) %>?id=<%= server.id %>">Edit</a>
+                <a class="btn btn-primary" href="<%= server_path(@conn, :test) %>?id=<%= server.id %>">Debug</a>
+                <%= link "Delete", to: server_path(@conn, :delete) <> "?id=#{server.id}", method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer small text-muted"><a class="btn btn-primary" href="<%= server_path(@conn, :new) %>">New</a></div>
+</div>
+
+
+<script>
+var delay_run = function(){
+    $(document).ready(function() {
+        $('#dataTable').DataTable( {
+            "language": {
+                "lengthMenu": "Display _MENU_ records per page",
+                "zeroRecords": "Nothing found - sorry",
+                "info": "Showing page _PAGE_ of _PAGES_",
+                "infoEmpty": "No records available",
+                "infoFiltered": "(filtered from _MAX_ total records)"
+            }
+        } );
+    } );
+}
+
+</script>

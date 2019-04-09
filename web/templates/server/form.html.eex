@@ -1,0 +1,28 @@
+<form accept-charset="UTF-8" action="<%= @action %>" method="post">
+    <input type="hidden" value="<%= @token %>" name="_csrf_token" />
+    <input type="hidden" value="<%= @server.id %>" name="id" />
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label text-right">Name</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control" id="name" name="name" value="<%= @server.name %>">
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label text-right">Note</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control" id="note" name="note" value="<%= @server.note %>">
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label text-right">Scripts</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control" id="script_sequence" name="script_sequence" value="<%= get_script_sequence(@server) %>">
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label"> </label>
+        <div class="col-sm-10">
+            <button type="submit" class="btn btn-primary mb-2">Submit</button>
+        </div>
+    </div>
+</form>
